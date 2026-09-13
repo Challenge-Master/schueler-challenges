@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nachricht an den Challenge Master</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <span class="eye">👁</span>
+      <span class="brand-name">SCHÜLER-CHALLENGES</span>
+    </a>
+    <nav>
+      <a href="challenge.html">Challenge</a>
+      <a href="gallery.html">Galerie</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <h1 style="font-family: var(--font-display); font-size:1.6rem;">💌 Nachricht an den Challenge Master</h1>
+    <p class="form-note">
+      Was hat dir gefallen? Was war nervig? Welche Challenge möchtest du sehen?
+      Hast du eine komplett verrückte Idee? Diese Nachricht ist anonym — wir fragen nicht nach deinem Namen.
+    </p>
+
+    <form id="feedback-form">
+      <label for="category">Worum geht's?</label>
+      <select id="category">
+        <option value="idee">Ideen für neue Challenges</option>
+        <option value="lob">Lob</option>
+        <option value="kritik">Kritik</option>
+        <option value="sonstiges">Sonstiges</option>
+      </select>
+
+      <label for="message">Deine Nachricht</label>
+      <textarea id="message" required maxlength="1000" placeholder="Schreib einfach los …"></textarea>
+
+      <p style="margin-top:1.1rem;">
+        <button class="btn btn-primary" type="submit">SENDEN</button>
+      </p>
+      <p id="feedback-status" class="form-status"></p>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <span>© Challenge Master</span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script>
+    document.getElementById("feedback-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = document.getElementById("feedback-status");
+      const message = document.getElementById("message").value.trim();
+      const category = document.getElementById("category").value;
+
+      const { error } = await supabase.from("feedback").insert({ message, category });
+
+      if (error) {
+        status.textContent = "Konnte nicht gesendet werden. Versuch's nochmal.";
+        status.className = "form-status error";
+        return;
+      }
+      status.textContent = "Angekommen. Der Challenge Master liest alles. 👁";
+      status.className = "form-status ok";
+      document.getElementById("feedback-form").reset();
+    });
+
+    trackPageView("feedback");
+  </script>
+</body>
+</html>

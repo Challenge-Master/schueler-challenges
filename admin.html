@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin – Schüler-Challenges</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <span class="eye">👁</span>
+      <span class="brand-name">SCHÜLER-CHALLENGES · ADMIN</span>
+    </a>
+    <nav>
+      <a href="#" id="logout-link" style="display:none;">Abmelden</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+
+    <section id="login-section">
+      <h1 style="font-family: var(--font-display); font-size:1.4rem;">Anmeldung</h1>
+      <p class="form-note">Nur für den Challenge Master. Konto vorher im Supabase-Dashboard unter Authentication anlegen.</p>
+      <form id="login-form">
+        <label for="email">E-Mail</label>
+        <input type="email" id="email" required />
+        <label for="password">Passwort</label>
+        <input type="password" id="password" required />
+        <p style="margin-top:1rem;">
+          <button class="btn btn-primary" type="submit">ANMELDEN</button>
+        </p>
+        <p id="login-status" class="form-status"></p>
+      </form>
+    </section>
+
+    <section id="admin-section" style="display:none;">
+      <h1 style="font-family: var(--font-display); font-size:1.4rem;">Übersicht</h1>
+      <div id="stats" class="stat-grid"></div>
+
+      <h2 style="font-family: var(--font-display); font-size:1.15rem;">Wartende Abgaben</h2>
+      <div id="pending-list"></div>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script>
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) showAdmin();
+    }
+
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = document.getElementById("login-status");
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        status.textContent = "Login fehlgeschlagen: " + error.message;
+        status.className = "form-status error";
+        return;
+      }
+      showAdmin();
+    });
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await supabase.auth.signOut();
+      location.reload();
+    });
+
+    function showAdmin() {
+      document.getElementById("login-section").style.display = "none";
+      document.getElementById("admin-section").style.display = "block";
+      document.getElementById("logout-link").style.display = "inline";
+      loadStats();
+      loadPending();
+    }
+
+    async function loadStats() {
+      const statsEl = document.getElementById("stats");
+      const [{ count: submissionCount }, { count: approvedCount }, { data: likes }, { data: votes },
+             { count: feedbackCount }, { data: views }] = await Promise.all([
+        supabase.from("submissions").select("*", { count: "exact", head: true }),
+        supabase.from("submissions").select("*", { count: "exact", head: true }).eq("status", "approved"),
+        supabase.from("likes").select("anon_id"),
+        supabase.from("final_votes").select("id"),
+        supabase.from("feedback").select("*", { count: "exact", head: true }),
+        supabase.from("page_views").select("*"),
+      ]);
+
+      const uniqueLikers = new Set((likes || []).map(l => l.anon_id)).size;
+      const totalViews = (views || []).reduce((sum, v) => sum + v.count, 0);
+
+      const stats = [
+        ["Abgaben gesamt", submissionCount ?? 0],
+        ["Davon freigegeben", approvedCount ?? 0],
+        ["Likes gesamt", (likes || []).length],
+        ["Unterschiedliche Liker:innen", uniqueLikers],
+        ["Final Votes", (votes || []).length],
+        ["Feedback-Nachrichten", feedbackCount ?? 0],
+        ["Seitenaufrufe gesamt", totalViews],
+      ];
+
+      statsEl.innerHTML = stats.map(([label, num]) => `
+        <div class="stat-box">
+          <div class="num">${num}</div>
+          <div class="label">${label}</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadPending() {
+      const list = document.getElementById("pending-list");
+      const { data, error } = await supabase
+        .from("submissions")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        list.innerHTML = `<p class="form-note">Fehler beim Laden.</p>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        list.innerHTML = `<p class="form-note">Keine wartenden Abgaben.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(sub => {
+        const url = getMediaUrl(sub.media_path);
+        return `
+          <div class="admin-row" data-id="${sub.id}">
+            ${sub.media_type === "video"
+              ? `<video src="${url}" controls></video>`
+              : `<img src="${url}" alt="" />`}
+            <div style="flex:1;">
+              <p class="name" style="font-family: var(--font-body); font-weight:600;">${escapeHtml(sub.display_name)} ${sub.is_team ? "(Team)" : ""}</p>
+              <p class="desc">${escapeHtml(sub.description || "—")}</p>
+              <div class="admin-actions">
+                <button class="btn btn-primary approve-btn">Freigeben</button>
+                <button class="btn btn-ghost reject-btn">Ablehnen</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      list.querySelectorAll(".approve-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => updateStatus(e, "approved"));
+      });
+      list.querySelectorAll(".reject-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => updateStatus(e, "rejected"));
+      });
+    }
+
+    async function updateStatus(e, status) {
+      const row = e.target.closest(".admin-row");
+      const id = row.dataset.id;
+      const { error } = await supabase.from("submissions").update({ status }).eq("id", id);
+      if (!error) {
+        row.remove();
+        loadStats();
+      }
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>

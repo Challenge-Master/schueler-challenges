@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galerie – Schüler-Challenges</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <span class="eye">👁</span>
+      <span class="brand-name">SCHÜLER-CHALLENGES</span>
+    </a>
+    <nav>
+      <a href="challenge.html">Challenge</a>
+      <a href="feedback.html">Nachricht</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <h1 style="font-family: var(--font-display); font-size:1.6rem;">GALERIE</h1>
+    <p id="phase-note" class="form-note"></p>
+    <div id="gallery" class="gallery-grid">
+      <p class="form-note">Lade Beiträge …</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>© Challenge Master</span>
+    <a href="feedback.html">Nachricht an den Challenge Master</a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script>
+    const anonId = getAnonId();
+    let activeChallenge = null;
+
+    async function loadGallery() {
+      const grid = document.getElementById("gallery");
+      const phaseNote = document.getElementById("phase-note");
+
+      const { data: challenge } = await supabase
+        .from("challenges")
+        .select("*")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+
+      activeChallenge = challenge;
+
+      let query = supabase.from("submissions").select("*").eq("status", "approved");
+      if (challenge) query = query.eq("challenge_id", challenge.id);
+      const { data: submissions, error } = await query.order("created_at", { ascending: false });
+
+      if (error) {
+        grid.innerHTML = `<p class="form-note">Beiträge konnten nicht geladen werden.</p>`;
+        return;
+      }
+      if (!submissions || submissions.length === 0) {
+        grid.innerHTML = `<p class="form-note">Noch keine freigegebenen Beiträge.</p>`;
+        return;
+      }
+
+      const isFinalPhase = challenge && challenge.phase === "final";
+      phaseNote.textContent = isFinalPhase
+        ? "Final Vote: Die Top-Beiträge stehen fest. Du hast eine Stimme."
+        : "Ein Like pro Person und Beitrag.";
+
+      const finalists = submissions.filter(s => s.is_finalist);
+      const shownSubmissions = isFinalPhase && finalists.length > 0 ? finalists : submissions;
+
+      // Like-Zahlen laden
+      const { data: allLikes } = await supabase.from("likes").select("submission_id, anon_id");
+      const { data: allVotes } = await supabase.from("final_votes").select("submission_id, anon_id");
+
+      grid.innerHTML = "";
+      for (const sub of shownSubmissions) {
+        const likeCount = (allLikes || []).filter(l => l.submission_id === sub.id).length;
+        const alreadyLiked = (allLikes || []).some(l => l.submission_id === sub.id && l.anon_id === anonId);
+        const alreadyVoted = (allVotes || []).some(v => v.submission_id === sub.id && v.anon_id === anonId);
+        const voteCount = (allVotes || []).filter(v => v.submission_id === sub.id).length;
+        const url = getMediaUrl(sub.media_path);
+
+        const card = document.createElement("article");
+        card.className = "submission-card";
+        card.innerHTML = `
+          ${sub.media_type === "video"
+            ? `<video src="${url}" controls></video>`
+            : `<img src="${url}" alt="Beitrag von ${escapeHtml(sub.display_name)}" loading="lazy" />`}
+          <div class="body">
+            <p class="name">${escapeHtml(sub.display_name)} ${sub.is_finalist ? '<span class="finalist-badge">FINALIST</span>' : ""}</p>
+            ${sub.description ? `<p class="desc">${escapeHtml(sub.description)}</p>` : ""}
+            <div class="row">
+              ${isFinalPhase
+                ? `<button class="btn-like ${alreadyVoted ? "liked" : ""}" data-id="${sub.id}" data-mode="vote" ${alreadyVoted ? "disabled" : ""}>
+                     🗳️ ${voteCount}
+                   </button>`
+                : `<button class="btn-like ${alreadyLiked ? "liked" : ""}" data-id="${sub.id}" data-mode="like" ${alreadyLiked ? "disabled" : ""}>
+                     ❤️ ${likeCount}
+                   </button>`
+              }
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+
+      grid.querySelectorAll("button[data-mode]").forEach(btn => {
+        btn.addEventListener("click", () => handleVoteClick(btn));
+      });
+    }
+
+    async function handleVoteClick(btn) {
+      const submissionId = btn.dataset.id;
+      const mode = btn.dataset.mode;
+      btn.disabled = true;
+
+      if (mode === "like") {
+        const { error } = await supabase.from("likes").insert({
+          submission_id: submissionId, anon_id: anonId
+        });
+        if (!error) {
+          btn.classList.add("liked");
+          btn.textContent = "❤️ " + (parseInt(btn.textContent.replace(/\D/g, "")) + 1);
+        } else {
+          btn.disabled = false; // z.B. schon geliked -> Constraint-Fehler
+        }
+      } else {
+        const { error } = await supabase.from("final_votes").insert({
+          challenge_id: activeChallenge.id, submission_id: submissionId, anon_id: anonId
+        });
+        if (!error) {
+          btn.classList.add("liked");
+          btn.textContent = "🗳️ " + (parseInt(btn.textContent.replace(/\D/g, "")) + 1);
+          // Alle anderen Vote-Buttons für diese Challenge sperren (eine Stimme insgesamt)
+          document.querySelectorAll('button[data-mode="vote"]').forEach(b => b.disabled = true);
+        } else {
+          btn.disabled = false;
+        }
+      }
+    }
+
+    loadGallery();
+    trackPageView("gallery");
+  </script>
+</body>
+</html>
