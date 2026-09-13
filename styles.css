@@ -36,7 +36,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--ink);
+  background: var(--paper);
   background-image:
     radial-gradient(circle at 20% -10%, rgba(178, 58, 46, 0.08), transparent 45%),
     radial-gradient(circle at 90% 10%, rgba(201, 162, 39, 0.06), transparent 40%);
@@ -103,7 +103,7 @@ textarea:focus-visible {
   color: var(--text-muted);
 }
 
-.site-header nav a:hover { color: var(--paper); }
+.site-header nav a:hover { color: var(--ink); }
 
 /* ---------- Hero ---------- */
 
@@ -116,7 +116,7 @@ textarea:focus-visible {
   font-size: clamp(2rem, 8vw, 2.8rem);
   line-height: 1.05;
   margin: 0 0 0.6rem;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .hero .tagline {
@@ -148,8 +148,8 @@ textarea:focus-visible {
 
 .case-file {
   position: relative;
-  background: var(--paper);
-  color: #24211d;
+  background: var(--ink-raised);
+  color: var(--ink);
   border-radius: var(--radius);
   padding: 1.6rem 1.4rem 1.5rem;
   margin: 1.6rem 0;
@@ -231,7 +231,7 @@ textarea:focus-visible {
 
 .btn-like {
   background: var(--ink-raised);
-  color: var(--paper);
+  color: var(--ink);
   border: 1px solid var(--line);
   font-family: var(--font-body);
   font-weight: 600;
@@ -405,4 +405,4 @@ textarea { min-height: 5rem; resize: vertical; }
 }
 
 .site-footer a { color: var(--text-muted); }
-.site-footer a:hover { color: var(--paper); }
+.site-footer a:hover { color: var(--ink); }
