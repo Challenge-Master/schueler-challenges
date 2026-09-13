@@ -7,8 +7,8 @@
 // eigentliche Sicherheit kommt aus den Row-Level-Security-Policies
 // in supabase-schema.sql, nicht aus Geheimhaltung dieses Keys.
 
-const SUPABASE_URL = "https://DEIN-PROJEKT.supabase.co";
-const SUPABASE_ANON_KEY = "DEIN-ANON-KEY";
+const SUPABASE_URL = "https://ejdvgzbryqkmjtyodwkv.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "sb_publishable_8Gy_YBL19bSulJ_g37_nsA_6KAL11wM";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
