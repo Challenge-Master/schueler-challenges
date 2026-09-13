@@ -7,15 +7,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  --ink: #14131a;
-  --ink-raised: #1c1a24;
-  --paper: #e8e1cc;
-  --paper-dim: #d8cfb2;
+  --ink: #24211d;
+  --ink-raised: #fffdf8;
+
+  --paper: #f5f1e6;
+  --paper-dim: #e8e1d2;
+
   --stamp-red: #b23a2e;
-  --brass: #c9a227;
-  --line: #3a3546;
-  --text-on-ink: #ede6d6;
-  --text-muted: #9b93a6;
+  --brass: #9b7819;
+
+  --line: #d8cfba;
+
+  --text-on-ink: #24211d;
+  --text-muted: #6f695f;
 
   --font-display: 'Special Elite', 'Courier New', monospace;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -145,7 +149,7 @@ textarea:focus-visible {
 .case-file {
   position: relative;
   background: var(--paper);
-  color: #201c14;
+  color: #24211d;
   border-radius: var(--radius);
   padding: 1.6rem 1.4rem 1.5rem;
   margin: 1.6rem 0;
@@ -187,9 +191,9 @@ textarea:focus-visible {
 
 .case-file .meta {
   font-size: 0.85rem;
-  color: #4a4331;
+  color: #6f695f;
   margin-top: 0.8rem;
-  border-top: 1px dashed #b7ac8a;
+  border-top: 1px dashed #d8cfba;
   padding-top: 0.6rem;
 }
 
