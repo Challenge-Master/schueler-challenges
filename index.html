@@ -49,6 +49,7 @@
         .limit(1)
         .maybeSingle();
 
+      console.log("Supabase-Antwort:", { data, error });
       if (error || !data) {
         container.innerHTML = `<p class="form-note">Gerade läuft keine Challenge. Schau bald wieder vorbei.</p>`;
         return;
