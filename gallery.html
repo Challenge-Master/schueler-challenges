@@ -82,7 +82,7 @@
         const alreadyLiked = (allLikes || []).some(l => l.submission_id === sub.id && l.anon_id === anonId);
         const alreadyVoted = (allVotes || []).some(v => v.submission_id === sub.id && v.anon_id === anonId);
         const voteCount = (allVotes || []).filter(v => v.submission_id === sub.id).length;
-        const url = getMediaUrl(sub.media_path);
+        const url = await getMediaUrl(sub.media_path);
 
         const card = document.createElement("article");
         card.className = "submission-card";
