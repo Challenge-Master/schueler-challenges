@@ -42,9 +42,15 @@ async function trackPageView(pageName) {
 // ----------------------------------------------------------
 // Öffentliche URL für eine Datei im "submissions"-Bucket holen
 // ----------------------------------------------------------
-function getMediaUrl(mediaPath) {
-  const { data } = supabase.storage.from("submissions").getPublicUrl(mediaPath);
-  return data.publicUrl;
+async function getMediaUrl(mediaPath) {
+  const { data, error } = await supabase.storage
+    .from("submissions")
+    .createSignedUrl(mediaPath, 3600); // 1 Stunde gültig
+  if (error) {
+    console.warn("Konnte Medien-URL nicht erzeugen:", error);
+    return null;
+  }
+  return data.signedUrl;
 }
 
 // Kleine Helferfunktion zum sicheren Escapen von Nutzertext,
