@@ -132,24 +132,26 @@
         return;
       }
 
-      list.innerHTML = data.map(sub => {
-        const url = getMediaUrl(sub.media_path);
-        return `
-          <div class="admin-row" data-id="${sub.id}">
-            ${sub.media_type === "video"
-              ? `<video src="${url}" controls></video>`
-              : `<img src="${url}" alt="" />`}
-            <div style="flex:1;">
-              <p class="name" style="font-family: var(--font-body); font-weight:600;">${escapeHtml(sub.display_name)} ${sub.is_team ? "(Team)" : ""}</p>
-              <p class="desc">${escapeHtml(sub.description || "—")}</p>
-              <div class="admin-actions">
-                <button class="btn btn-primary approve-btn">Freigeben</button>
-                <button class="btn btn-ghost reject-btn">Ablehnen</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
+     const rows = [];
+for (const sub of data) {
+  const url = await getMediaUrl(sub.media_path);
+  rows.push(`
+    <div class="admin-row" data-id="${sub.id}">
+      ${sub.media_type === "video"
+        ? `<video src="${url}" controls></video>`
+        : `<img src="${url}" alt="" />`}
+      <div style="flex:1;">
+        <p class="name" style="font-family: var(--font-body); font-weight:600;">${escapeHtml(sub.display_name)} ${sub.is_team ? "(Team)" : ""}</p>
+        <p class="desc">${escapeHtml(sub.description || "—")}</p>
+        <div class="admin-actions">
+          <button class="btn btn-primary approve-btn">Freigeben</button>
+          <button class="btn btn-ghost reject-btn">Ablehnen</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+list.innerHTML = rows.join("");
 
       list.querySelectorAll(".approve-btn").forEach(btn => {
         btn.addEventListener("click", (e) => updateStatus(e, "approved"));
